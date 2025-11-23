@@ -3,7 +3,7 @@ name: Run Event Calendar Script
 # Dispara el workflow cada 3 minutos o manualmente
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "*/3 * * * *"
   workflow_dispatch:
 
 jobs:
