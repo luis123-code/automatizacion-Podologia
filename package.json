@@ -1,0 +1,19 @@
+{
+  "name": "botfootcare",
+  "version": "1.0.0",
+  "description": "Cuenta de servicio utilizada para crear eventos de citas de pacientes en Google Calendar de forma automatizada desde GitHub Actions. Esta cuenta permitirá que el sistema de podología registre nuevas citas sin intervención manual.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "recordatorio": "node scripts/methodCalendar/eventCalendar.js",
+    "actualizarRecordatorio" : "node scripts/methodCalendar/updateEventCalendar.js",
+    "eliminarRecordatorio" : "node scripts/methodCalendar/deleteCalendar.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "googleapis": "^166.0.0"
+  }
+}
