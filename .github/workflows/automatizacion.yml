@@ -29,4 +29,4 @@ jobs:
           AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
           AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
           AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
-          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
