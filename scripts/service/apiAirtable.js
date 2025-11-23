@@ -3,104 +3,79 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-let datos = {
-    TOKEN: process.env.AIRTABLE_TKN,
-    BASE_ID: process.env.AIRTABLE_BSID,
-    TABLE: process.env.AIRTABLE_TBL_CITA,
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TKN;
+const AIRTABLE_BASE = process.env.AIRTABLE_BSID;
+const TABLE_CITA = process.env.AIRTABLE_TBL_CITA;
+const TABLE_PACIENTE = process.env.AIRTABLE_TBL_PACIENTE;
+
+// Construye URL de Airtable
+function urlApiAirtable(table, query = "") {
+    return `https://api.airtable.com/v0/${AIRTABLE_BASE}/${table}${query}`;
+}
+
+// Formulas de filtrado
+const filtrarPorID = id => `?filterByFormula=${encodeURIComponent(`RECORD_ID()='${id}'`)}`;
+const filtrarPorCampo = (campo, valor) => `?filterByFormula=${encodeURIComponent(`{${campo}}='${valor}'`)}`;
+const filtrarIdColumna = id => `/${id}`;
+
+// Mapeo de funciones GET
+const getHandlers = {
+    geCitasInfor: () =>
+        apiService({
+            url: urlApiAirtable(TABLE_CITA, filtrarPorCampo("Estado", "nuevo")),
+            token: AIRTABLE_TOKEN
+        }),
+
+    GetUpdateCitasInfor: () =>
+        apiService({
+            url: urlApiAirtable(TABLE_CITA, filtrarPorCampo("Estado", "actualizar")),
+            token: AIRTABLE_TOKEN
+        }),
+
+    GetdeleteCitasInfor: () =>
+        apiService({
+            url: urlApiAirtable(TABLE_CITA, filtrarPorCampo("Estado", "eliminar")),
+            token: AIRTABLE_TOKEN
+        }),
+
+    GetPacienteInfor: queryId =>
+        apiService({
+            url: urlApiAirtable(TABLE_PACIENTE, filtrarPorID(queryId)),
+            token: AIRTABLE_TOKEN
+        })
 };
 
+// Mapeo de funciones PATCH
+const patchHandlers = {
+    updateCalendarioEventAirtable: (queryId, cuerpo) =>
+        apiService({
+            url: urlApiAirtable(TABLE_CITA, filtrarIdColumna(queryId)),
+            method: "PATCH",
+            token: AIRTABLE_TOKEN,
+            cuerpo
+        })
+};
 
-function urlApiAirtable(table, query = "") {
-    return `https://api.airtable.com/v0/${datos.BASE_ID}/${table}${query}`;
-}
-
-function filtrarPorID(id) {
-    const formula = `RECORD_ID()='${id}'`;
-    return `?filterByFormula=${encodeURIComponent(formula)}`;
-}
-
-function filtrarEndpoint({ tipo, valor }) {
-    const formula = `{${tipo}}='${valor}'`;
-    return `?filterByFormula=${encodeURIComponent(formula)}`;
-}
-
-function filtrarIdColumna(id){
-    return `/${id}`
-}
-
-
-export default async function apiServiceAirtableCrud({
-    method = "get",
-    cuerpo = {} ,
-    queryId ,
-    type  = ""
-}) {
-
-    let response = ""
-
+// Función principal
+export default async function apiServiceAirtableCrud({ method = "GET", type = "", queryId = "", cuerpo = {} }) {
     try {
-        switch (method.toUpperCase()) {
-            case "GET":
-                const stateByTypeGet = {
-                    async geCitasInfor() {
-                        return apiService({
-                            url: urlApiAirtable(datos.TABLE, filtrarEndpoint({ tipo: "Estado", valor: "nuevo" })),
-                            token: datos.TOKEN
-                        });
-                    },
+        method = method.toUpperCase();
 
-                    async GetUpdateCitasInfor() {
-                        return apiService({
-                            url: urlApiAirtable(datos.TABLE, filtrarEndpoint({ tipo: "Estado", valor: "actualizar" })),
-                            token: datos.TOKEN
-                        });
-                    },
-
-                    async GetdeleteCitasInfor() {
-                        return apiService({
-                            url: urlApiAirtable(datos.TABLE, filtrarEndpoint({ tipo: "Estado", valor: "eliminar" })),
-                            token: datos.TOKEN
-                        });
-                    },
-
-                    async GetPacienteInfor() {
-                        datos.TABLE = process.env.AIRTABLE_TBL_PACIENTE;
-                        return apiService({
-                            url: urlApiAirtable(datos.TABLE, filtrarPorID(queryId)),
-                            token: datos.TOKEN
-                        });
-                    }
-                };
-                response = await stateByTypeGet[type]();
-                return response
-
-            case "PATCH":
-                const stateByTypePatch = {
-                    async updateCalendarioEventAirtable() {
-                        datos.TABLE = process.env.AIRTABLE_TBL_CITA;
-                        return apiService({
-                            url: urlApiAirtable(datos.TABLE, filtrarIdColumna(queryId)),
-                            method : "PATCH" ,
-                            token: datos.TOKEN ,
-                            cuerpo
-                        });
-                    }
-                }
-                response = await stateByTypePatch[type]();
-                return response
-
-            default:
-                return "metodo no indicado"
-
+        if (method === "GET") {
+            const handler = getHandlers[type];
+            if (!handler) throw new Error(`Tipo GET no encontrado: ${type}`);
+            return await handler(queryId);
         }
+
+        if (method === "PATCH") {
+            const handler = patchHandlers[type];
+            if (!handler) throw new Error(`Tipo PATCH no encontrado: ${type}`);
+            return await handler(queryId, cuerpo);
+        }
+
+        throw new Error(`Método no soportado: ${method}`);
     } catch (error) {
+        console.error("Error en apiServiceAirtableCrud:", error.message);
         return { error: true, message: error.message };
     }
 }
-
-
-
-
-
-
-

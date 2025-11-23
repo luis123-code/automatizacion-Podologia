@@ -1,196 +1,93 @@
 import apiServiceAirtableCrud from "../service/apiAirtable.js";
 import apiServiceGoogleCalendar from "../service/apiGoogle.js";
 
-let TotalPacienteEliminado = []
-
-
-async function DeleteCitasInfor() {
+async function deleteCitasInfo() {
     try {
-        const response = await apiServiceAirtableCrud(
-            {
-                type: "GetdeleteCitasInfor"
-            }
-        )
-        let { cuerpo: { records } } = response
-        if (records && records.length > 0) {
-            for (let record of records) {
-                let informacionPaciente = {
-                    "idColumna": record.id,
-                    "Nombre": record.fields["Nombre Paciente"],
-                    "cita": record.fields["Cita Puntual"],
-                    "procedimiento": record.fields["Tipo de procedimiento Cita"],
-                    "progreso": record.fields["Progreso"],
-                    "Fecha": record.fields["Fecha"],
-                    "id": record.fields["Pacientes"][0],
-                    "colorid": accediendoColores(record.fields["Progreso"]),
-                    "TokenCalendario": record.fields["tokenCalendario"]
-                };
+        const response = await apiServiceAirtableCrud({ type: "GetdeleteCitasInfor" });
+        const records = response?.cuerpo?.records || [];
 
-                TotalPacienteEliminado.push(informacionPaciente)
-            }
-            await getPacienteInfor()
-        } else {
-            return
-        }
-    } catch (error) {
-        console.log("respuesta es", error)
-    }
-}
+        if (!records.length) return;
 
+        // Mapear pacientes a eliminar
+        const pacientes = records.map(record => ({
+            idColumna: record.id,
+            Nombre: record.fields["Nombre Paciente"],
+            cita: record.fields["Cita Puntual"],
+            procedimiento: record.fields["Tipo de procedimiento Cita"],
+            progreso: record.fields["Progreso"],
+            Fecha: record.fields["Fecha"],
+            id: record.fields["Pacientes"][0],
+            colorid: getColorId(record.fields["Progreso"]),
+            TokenCalendario: record.fields["tokenCalendario"]
+        }));
 
+        // Obtener información de todos los pacientes en paralelo
+        await Promise.all(
+            pacientes.map(async paciente => {
+                try {
+                    const resp = await apiServiceAirtableCrud({
+                        queryId: paciente.id,
+                        type: "GetPacienteInfor"
+                    });
 
-async function getPacienteInfor() {
-    for (let index = 0; index < TotalPacienteEliminado.length; index++) {
-        const paciente = TotalPacienteEliminado[index];
-        try {
-            const response = await apiServiceAirtableCrud(
-                {
-                    queryId: paciente["id"],
-                    type: "GetPacienteInfor",
+                    const record = resp?.cuerpo?.records?.[0];
+                    if (record) {
+                        const fields = record.fields;
+                        paciente.Teléfono = fields['Teléfono'];
+                        paciente.whatsapp = fields['Wasap'];
+                        paciente.Tipo_de_paciente = fields['Tipo de paciente'];
+                        paciente.Ubicacion = fields['Ubicacion'];
+                    }
+                } catch (err) {
+                    console.error("Error obteniendo info de paciente:", paciente.Nombre, err.message);
                 }
+            })
+        );
 
-            )
+        // Eliminar eventos de Google Calendar y actualizar Airtable en paralelo
+        await Promise.all(
+            pacientes.map(async paciente => {
+                try {
+                    await apiServiceGoogleCalendar({
+                        bodyInformacion: paciente,
+                        method: "delete"
+                    });
 
-            let { cuerpo } = response
-            if (cuerpo.records && cuerpo.records.length > 0) {
-                for (let record of cuerpo.records) {
-                    let { fields } = record
-                    paciente["Teléfono"] = fields['Teléfono']
-                    paciente["whatsapp"] = fields['Wasap']
-                    paciente["Tipo_de_paciente"] = fields['Tipo de paciente']
-                    paciente["Ubicacion"] = fields['Ubicacion']
+                    await apiServiceAirtableCrud({
+                        method: "PATCH",
+                        queryId: paciente.idColumna,
+                        cuerpo: {
+                            fields: {
+                                Estado: "registrado",
+                                tokenCalendario: "eliminado"
+                            }
+                        },
+                        type: "updateCalendarioEventAirtable"
+                    });
+                } catch (err) {
+                    console.error("Error eliminando paciente:", paciente.Nombre, err.message);
                 }
-            } else {
-                return
-            }
-        } catch (error) {
-            throw new Error("error en el api")
-        }
-    }
-    bucleEvntCalendario()
+            })
+        );
 
-}
+        console.log("Eliminación completada:", pacientes);
 
-
-async function bucleEvntCalendario() {
-    if (TotalPacienteEliminado.length === 0) { return }
-
-    for (const paciente of TotalPacienteEliminado) {
-        await deleteCalendarioEvent(paciente);
-        await updatedRegistroAirtable(paciente)
-    }
-
-
-    console.log(":Arrays  TotalPacienteEliminado", TotalPacienteEliminado)
-
-}
-
-async function deleteCalendarioEvent(getPaciente) {
-    try {
-        let response = await apiServiceGoogleCalendar(
-            {
-                bodyInformacion: getPaciente ,
-                method :"delete",
-            }
-        )
-        return response
     } catch (error) {
-        return "vacio"
+        console.error("Error en deleteCitasInfo:", error.message);
     }
 }
 
-
-
-
-
-
-
-async function updatedRegistroAirtable(paciente) {
-    let { idColumna } = paciente
-    if (!idColumna) {
-        return
-    }
-    let cuerpo = {
-        "fields": {
-            "Estado": "registrado",
-            "tokenCalendario": "eliminado"
-        }
-    }
-    try {
-        let response = await apiServiceAirtableCrud(
-            {
-                method: "PATCH",
-                cuerpo,
-                queryId : idColumna,
-                type : "updateCalendarioEventAirtable"
-            }
-        )
-        console.log("se ejecuto la respuesta updatedRegistroAirtable", response)
-    } catch (error) {
-        throw new Error("Error a enviar la peticion")
-    }
+// Función para obtener colorId
+function getColorId(color) {
+    const colores = {
+        Confirmada: "5",
+        Pendiente: "4",
+        Cancelada: "11",
+        Descontinuado: "2",
+        Programado: "1"
+    };
+    return colores[color] || "";
 }
 
-
-
-
-
-
-
-DeleteCitasInfor()
-
-
-
-
-
-
-function parseCita(cita) {
-
-    const [fecha, textoHora] = cita.split(" - Cita ");
-    const [dia, mes, año] = fecha.split("/");
-    const hora = textoHora.trim();
-
-    return new Date(`${año}-${mes}-${dia}T${hora}:00`);
-}
-
-
-
-
-function filtrarPorID(id) {
-    const formula = `RECORD_ID()='${id}'`;
-    return `?filterByFormula=${encodeURIComponent(formula)}`;
-}
-
-
-function urlApiAirtable() {
-    return `https://api.airtable.com/v0/${datos.BASE_ID}/${datos.TABLE}`;
-}
-
-
-function filtrarEndpoint({ tipo, valor }) {
-    const formula = `{${tipo}}='${valor}'`;
-    return `?filterByFormula=${encodeURIComponent(formula)}`;
-}
-function accediendoColores(color) {
-    let codigo = ""
-    switch (color) {
-        case "Confirmada":
-            codigo = "5"
-            break;
-        case "Pendiente":
-            codigo = "4"
-            break;
-        case "Cancelada":
-            codigo = "11"
-            break;
-        case "Descontinuado":
-            codigo = "2"
-            break;
-        case "Programado":
-            codigo = "1"
-            break;
-        default:
-            break;
-    }
-    return codigo
-}
+// Ejecutar
+deleteCitasInfo();

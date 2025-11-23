@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "recordatorio": "node scripts/methodCalendar/eventCalendar.js",
-    "actualizarRecordatorio" : "node scripts/methodCalendar/updateEventCalendar.js",
-    "eliminarRecordatorio" : "node scripts/methodCalendar/deleteCalendar.js",
+    "actualizarRecordatorio": "node scripts/methodCalendar/updateEventCalendar.js",
+    "eliminarRecordatorio": "node scripts/methodCalendar/deleteCalendar.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

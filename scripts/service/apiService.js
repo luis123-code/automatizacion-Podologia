@@ -1,71 +1,46 @@
 import fetch from "node-fetch";
 
-export default async function apiService ({
+export default async function apiService({
     url,
-    cuerpo,
+    cuerpo = null,
     method = "GET",
     headers = {},
     token
 }) {
-    let resquest;
-
     try {
+        const httpMethod = method.toUpperCase();
+
         const defaultHeaders = {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token ? `Bearer ${token}` : undefined,
             ...headers
         };
 
         const fetchOptions = {
-            method: method.toUpperCase(),
+            method: httpMethod,
             headers: defaultHeaders,
+            ...(cuerpo && !["GET", "DELETE"].includes(httpMethod) ? { body: JSON.stringify(cuerpo) } : {})
         };
 
-        if (cuerpo && !["GET", "DELETE"].includes(method.toUpperCase())) {
-            fetchOptions.body = JSON.stringify(cuerpo);
-        }
+        const response = await fetch(url, fetchOptions);
 
-        let response;
         let data;
-
-        switch (method.toLowerCase()) {
-
-            case "get":
-                response = await fetch(url, fetchOptions);
-                data = await response.json();
-                break;
-
-            case "patch":
-                response = await fetch(url, fetchOptions);
-                data = await response.json();
-                break;
-
-            case "post":
-                response = await fetch(url, fetchOptions);
-                data = await response.json();
-                break;
-
-            case "delete":
-                response = await fetch(url, fetchOptions);
-                data = await response.json();
-                break;
-
-            default:
-                throw new Error(`Método HTTP no soportado: ${method}`);
+        try {
+            data = await response.json();
+        } catch {
+            data = null; // por si no hay JSON en la respuesta
         }
 
-        resquest = {
+        return {
             cuerpo: data,
             status: response.status
         };
 
     } catch (error) {
         console.error("Error en apiService:", error.message);
-        resquest = {
-            cuerpo: error.message,
-            status: "Error",
+        return {
+            cuerpo: { error: error.message },
+            status: "Error"
         };
     }
-
-    return resquest;
 }

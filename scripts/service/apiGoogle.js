@@ -3,6 +3,32 @@ import { google } from "googleapis";
 
 dotenv.config();
 
+
+try {
+    const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    console.log("JSON válido:", creds.client_email);
+} catch (e) {
+    console.error("JSON inválido:", e.message);
+}
+
+const googleCredentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
+
+//Credenciales
+const auth = new google.auth.GoogleAuth({
+    credentials: googleCredentials,
+    scopes: [
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/calendar.events",
+    ],
+});
+
+google.options({ auth });
+
+const calendar = google.calendar("v3");
+
+
+
 export default async function apiServiceGoogleCalendar({
     method = "insert",
     bodyInformacion }) {
@@ -12,32 +38,12 @@ export default async function apiServiceGoogleCalendar({
     //const __dirname = path.dirname(__filename);
     //const keyFilePath = path.join(__dirname, "../service/", "service-account.json");
 
-    try {
-        const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-        console.log("JSON válido:", creds.client_email);
-    } catch (e) {
-        console.error("JSON inválido:", e.message);
-    }
-
-    const googleCredentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-
-
-    //Credenciales
-    const auth = new google.auth.GoogleAuth({
-        credentials: googleCredentials,
-        scopes: [
-            "https://www.googleapis.com/auth/calendar",
-            "https://www.googleapis.com/auth/calendar.events",
-        ],
-    });
-
-    google.options({ auth });
 
 
     let response
 
     try {
-        const calendar = google.calendar("v3");
+
 
 
         switch (method.toLowerCase()) {
