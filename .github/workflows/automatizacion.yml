@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: Run Event Calendar Script
-        run: node scripts/methodCalendar/eventCalendar.js
+        run: node scripts/methodCalendar/crudCalendar.js
         env:
           AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
           AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
@@ -31,20 +31,3 @@ jobs:
           AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
 
-      - name: Run Update Event Calendar Script
-        run: node scripts/methodCalendar/updateEventCalendar.js
-        env:
-          AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
-          AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
-          AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
-          AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-
-      - name: Run Delete Calendar Script
-        run: node scripts/methodCalendar/deleteCalendar.js
-        env:
-          AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
-          AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
-          AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
-          AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}

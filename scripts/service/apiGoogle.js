@@ -48,13 +48,14 @@ export default async function apiServiceGoogleCalendar({
 
         switch (method.toLowerCase()) {
             case "insert":
-
                 let insertBody = await armandoBodyCalendar(bodyInformacion)
+console.log("Evento entro insert:",insertBody);
+
                 response = await calendar.events.insert({
                     calendarId: "footcarepodologiazevallos@gmail.com",
                     resource: insertBody,
                 });
-                console.log("Evento creado:", response.data.id);
+                
                 return response.data.id
 
 
