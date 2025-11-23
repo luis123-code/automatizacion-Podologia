@@ -1,0 +1,32 @@
+name: Run Event Calendar Script
+
+# Dispara el workflow cada 3 minutos o manualmente
+on:
+  schedule:
+    - cron: "*/1 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run script
+        run: node scripts/methodCalendar/eventCalendar.js
+        env:
+          AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
+          AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
+          AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
+          AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
