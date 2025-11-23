@@ -1,14 +1,13 @@
-name: Run Event Calendar Script
+name: Run Event Calendar Scripts
 
-# Dispara el workflow cada 3 minutos o manualmente
+# Dispara el workflow cada 7 minutos o manualmente
 on:
   schedule:
-    - cron: "*/3 * * * *"
+    - cron: "*/7 * * * *"
   workflow_dispatch:
 
-    
 jobs:
-  run-script:
+  run-scripts:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +22,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run script
+      - name: Run Event Calendar Script
         run: node scripts/methodCalendar/eventCalendar.js
+        env:
+          AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
+          AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
+          AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
+          AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Run Update Event Calendar Script
+        run: node scripts/methodCalendar/updateEventCalendar.js
+        env:
+          AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
+          AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
+          AIRTABLE_TBL_CITA: ${{ secrets.AIRTABLE_TBL_CITA }}
+          AIRTABLE_TBL_PACIENTE: ${{ secrets.AIRTABLE_TBL_PACIENTE }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Run Delete Calendar Script
+        run: node scripts/methodCalendar/deleteCalendar.js
         env:
           AIRTABLE_TKN: ${{ secrets.AIRTABLE_TKN }}
           AIRTABLE_BSID: ${{ secrets.AIRTABLE_BSID }}
